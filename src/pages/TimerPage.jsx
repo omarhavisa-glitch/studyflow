@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import StatsCard from "../components/StatsCard";
 import QuoteCard from "../components/QuoteCard";
 import TodoList from "../components/TodoList";
+import Navbar from "../components/Navbar";
+import { useTheme } from "../context/ThemeContext";
 
 const courses = [
   {
@@ -63,19 +64,17 @@ function TimerPage() {
   const [selectedCourse, setSelectedCourse] =
     useState(courses[0]);
 
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved =
-      localStorage.getItem("darkMode");
-    return saved
-      ? JSON.parse(saved)
-      : false;
-  });
+  const { darkMode } = useTheme();
 
-  const [sessions, setSessions] =
-    useState(0);
-  const [totalMinutes, setTotalMinutes] =
-    useState(0);
-  const [streak, setStreak] = useState(0);
+  const [sessions, setSessions] = useState(
+    () => Number(localStorage.getItem("completedSessions")) || 0
+  );
+  const [totalMinutes, setTotalMinutes] = useState(
+    () => Number(localStorage.getItem("totalStudyTime")) || 0
+  );
+  const [streak, setStreak] = useState(
+    () => Number(localStorage.getItem("studyStreak")) || 0
+  );
 
   useEffect(() => {
     let interval;
@@ -89,9 +88,31 @@ function TimerPage() {
     if (time === 0 && running) {
       setRunning(false);
 
+      // Update state lokal (untuk tampilan di halaman Timer)
       setSessions((prev) => prev + 1);
       setTotalMinutes((prev) => prev + 25);
       setStreak((prev) => prev + 1);
+
+      // Update localStorage (supaya Dashboard, DailyGoal, Achievement ikut update)
+      const prevCompletedSessions =
+        Number(localStorage.getItem("completedSessions")) || 0;
+      const prevTotalStudyTime =
+        Number(localStorage.getItem("totalStudyTime")) || 0;
+      const prevStreak =
+        Number(localStorage.getItem("studyStreak")) || 0;
+
+      localStorage.setItem(
+        "completedSessions",
+        prevCompletedSessions + 1
+      );
+      localStorage.setItem(
+        "totalStudyTime",
+        prevTotalStudyTime + 25
+      );
+      localStorage.setItem(
+        "studyStreak",
+        prevStreak + 1
+      );
 
       alert("🎉 Sesi fokus selesai!");
       setTime(1500);
@@ -99,13 +120,6 @@ function TimerPage() {
 
     return () => clearInterval(interval);
   }, [running, time]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "darkMode",
-      JSON.stringify(darkMode)
-    );
-  }, [darkMode]);
 
   const minutes = String(
     Math.floor(time / 60)
@@ -128,43 +142,7 @@ function TimerPage() {
           : "bg-[#f8fafc] text-slate-900"
       }`}
     >
-      <nav
-        className={`border-b ${
-          darkMode
-            ? "bg-slate-800 border-slate-700"
-            : "bg-white border-slate-200"
-        }`}
-      >
-        <div className="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-blue-600">
-            StudyFlow
-          </h1>
-
-          <div className="flex gap-4 items-center">
-            <button
-              onClick={() =>
-                setDarkMode(!darkMode)
-              }
-              className={`px-4 py-2 rounded-lg ${
-                darkMode
-                  ? "bg-slate-700"
-                  : "bg-slate-200"
-              }`}
-            >
-              {darkMode
-                ? "☀️ Light"
-                : "🌙 Dark"}
-            </button>
-
-            <Link
-              to="/"
-              className="hover:text-blue-600"
-            >
-              Kembali ke Beranda
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       <main className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-10">
@@ -219,13 +197,21 @@ function TimerPage() {
                 duration: 1,
                 repeat: Infinity,
               }}
-              className="w-64 h-64 rounded-full border-[14px] border-blue-100 flex flex-col items-center justify-center"
+              className={`w-64 h-64 rounded-full border-[14px] flex flex-col items-center justify-center ${
+                darkMode
+                  ? "border-slate-700"
+                  : "border-blue-100"
+              }`}
             >
               <h1 className="text-6xl font-extrabold">
                 {minutes}:{seconds}
               </h1>
 
-              <p className="text-slate-400 mt-3">
+              <p
+                className={`mt-3 ${
+                  darkMode ? "text-slate-500" : "text-slate-400"
+                }`}
+              >
                 25 menit fokus
               </p>
             </motion.div>
@@ -256,7 +242,11 @@ function TimerPage() {
                 onClick={() =>
                   setRunning(false)
                 }
-                className="bg-slate-200 text-slate-700 py-3 rounded-xl"
+                className={`py-3 rounded-xl ${
+                  darkMode
+                    ? "bg-slate-700 text-slate-200"
+                    : "bg-slate-200 text-slate-700"
+                }`}
               >
                 Pause
               </motion.button>
@@ -269,7 +259,11 @@ function TimerPage() {
                   scale: 0.95,
                 }}
                 onClick={resetTimer}
-                className="bg-slate-200 text-slate-700 py-3 rounded-xl"
+                className={`py-3 rounded-xl ${
+                  darkMode
+                    ? "bg-slate-700 text-slate-200"
+                    : "bg-slate-200 text-slate-700"
+                }`}
               >
                 Reset
               </motion.button>
@@ -325,7 +319,13 @@ function TimerPage() {
                     </span>
                   </div>
 
-                  <div className="w-full h-2 bg-slate-200 rounded-full">
+                  <div
+                    className={`w-full h-2 rounded-full ${
+                      darkMode
+                        ? "bg-slate-600"
+                        : "bg-slate-200"
+                    }`}
+                  >
                     <div
                       className="h-full bg-blue-600 rounded-full"
                       style={{

@@ -1,8 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useTheme } from "../context/ThemeContext";
 
 function TodoList() {
+  const { darkMode } = useTheme();
   const [task, setTask] = useState("");
-  const [todos, setTodos] = useState([]);
+
+  const [todos, setTodos] = useState(() => {
+    const saved = localStorage.getItem("studyflow_todos");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "studyflow_todos",
+      JSON.stringify(todos)
+    );
+  }, [todos]);
 
   function addTodo() {
     if (!task.trim()) return;
@@ -12,7 +25,7 @@ function TodoList() {
       {
         id: Date.now(),
         text: task,
-        done: false,
+        completed: false,
       },
     ]);
 
@@ -25,7 +38,7 @@ function TodoList() {
         todo.id === id
           ? {
               ...todo,
-              done: !todo.done,
+              completed: !todo.completed,
             }
           : todo
       )
@@ -34,72 +47,125 @@ function TodoList() {
 
   function deleteTodo(id) {
     setTodos(
-      todos.filter(
-        (todo) => todo.id !== id
-      )
+      todos.filter((todo) => todo.id !== id)
     );
   }
 
-  return (
-    <div className="bg-white p-8 rounded-3xl shadow mt-8">
-      <h2 className="text-2xl font-bold mb-5">
-        📋 Tugas Hari Ini
-      </h2>
+  const completed =
+    todos.filter((t) => t.completed).length;
 
-      <div className="flex gap-3 mb-5">
+  return (
+    <div
+      className={`rounded-3xl shadow-sm border p-6 mt-8 ${
+        darkMode
+          ? "bg-slate-800 border-slate-700"
+          : "bg-white border-slate-200"
+      }`}
+    >
+
+      <div className="flex justify-between items-center mb-6">
+
+        <h2 className="text-2xl font-bold">
+          📝 Todo List
+        </h2>
+
+        <span
+          className={`text-sm ${
+            darkMode ? "text-slate-400" : "text-slate-500"
+          }`}
+        >
+          {completed} / {todos.length} Completed
+        </span>
+
+      </div>
+
+      <div className="flex gap-3 mb-6">
+
         <input
+          type="text"
+          placeholder="Tambah tugas..."
           value={task}
           onChange={(e) =>
             setTask(e.target.value)
           }
-          placeholder="Tambah tugas..."
-          className="flex-1 border rounded-xl p-3"
+          className={`flex-1 border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 ${
+            darkMode
+              ? "bg-slate-900 border-slate-600 text-white placeholder-slate-500"
+              : "bg-white border-slate-300 text-slate-900"
+          }`}
         />
 
         <button
           onClick={addTodo}
-          className="bg-blue-600 text-white px-5 rounded-xl"
+          className="bg-blue-600 text-white px-6 rounded-xl hover:bg-blue-700 transition"
         >
-          Tambah
+          Add
         </button>
+
       </div>
 
-      {todos.map((todo) => (
-        <div
-          key={todo.id}
-          className="flex justify-between items-center border rounded-xl p-4 mb-3"
+      {todos.length === 0 ? (
+        <p
+          className={`text-center py-8 ${
+            darkMode ? "text-slate-500" : "text-slate-400"
+          }`}
         >
-          <p
-            className={
-              todo.done
-                ? "line-through text-slate-400"
-                : ""
-            }
-          >
-            {todo.text}
-          </p>
+          Belum ada tugas.
+        </p>
+      ) : (
+        <div className="space-y-3">
 
-          <div className="flex gap-2">
-            <button
-              onClick={() =>
-                toggleTodo(todo.id)
-              }
-              className="bg-green-500 text-white px-3 py-1 rounded"
-            >
-              ✓
-            </button>
+          {todos.map((todo) => (
 
-            <button
-              onClick={() =>
-                deleteTodo(todo.id)
-              }
-              className="bg-red-500 text-white px-3 py-1 rounded"
+            <div
+              key={todo.id}
+              className={`flex justify-between items-center border rounded-xl p-4 ${
+                darkMode
+                  ? "border-slate-600"
+                  : "border-slate-200"
+              }`}
             >
-              ✕
-            </button>
-          </div>
+
+              <div className="flex items-center gap-3">
+
+                <input
+                  type="checkbox"
+                  checked={todo.completed}
+                  onChange={() =>
+                    toggleTodo(todo.id)
+                  }
+                />
+
+                <span
+                  className={
+                    todo.completed
+                      ? `line-through ${
+                          darkMode ? "text-slate-500" : "text-slate-400"
+                        }`
+                      : ""
+                  }
+                >
+                  {todo.text}
+                </span>
+
+              </div>
+
+              <button
+                onClick={() =>
+                  deleteTodo(todo.id)
+                }
+                className="text-red-500 hover:text-red-700"
+              >
+                Delete
+              </button>
+
+            </div>
+
+          ))}
+
         </div>
-      ))}
+      )}
+
     </div>
   );
 }
